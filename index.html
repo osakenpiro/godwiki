@@ -1,3 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📜 godwiki — 神話エピソードDB</title>
+<meta property="og:title" content="godwiki — 神話エピソードDB">
+<meta property="og:description" content="ギリシャ・北欧・日本の神話24エピソードをカード型で閲覧">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;500;700&family=Noto+Serif+JP:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a0f;color:#c8c0d8;font-family:'Noto Sans JP',sans-serif;min-height:100vh}
+  .container{max-width:960px;margin:0 auto;padding:24px 16px}
+  h1{text-align:center;font-size:28px;font-weight:700;color:#d4af37;font-family:'Noto Serif JP',serif}
+  .subtitle{text-align:center;font-size:11px;color:#5a4a6a;letter-spacing:3px;margin:4px 0 20px}
+  .stats{display:flex;justify-content:center;gap:24px;margin-bottom:24px;font-size:12px;color:#5a4a6a}
+  .stats span{color:#d4af37;font-weight:700}
+  .filters{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .filter-btn{padding:6px 16px;font-size:12px;font-family:inherit;background:transparent;border:1px solid #2a2035;color:#8a7a9a;border-radius:20px;cursor:pointer;transition:all .2s}
+  .filter-btn.active,.filter-btn:hover{border-color:#d4af37;color:#d4af37;background:#1a1520}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .card{background:linear-gradient(180deg,#1a1520,#0f0d14);border:1px solid #2a2035;border-radius:8px;padding:16px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+  .card:hover{border-color:#d4af37;transform:translateY(-2px);box-shadow:0 4px 20px rgba(212,175,55,.1)}
+  .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+  .card-id{font-size:9px;letter-spacing:2px;color:#5a4a6a;font-weight:700}
+  .card-myth{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:500}
+  .myth-greek{background:#1a2530;color:#60a5fa;border:1px solid #2a3540}
+  .myth-norse{background:#2a1a20;color:#f472b6;border:1px solid #3a2a30}
+  .myth-japan{background:#1a2520;color:#4ade80;border:1px solid #2a3530}
+  .card-title{font-size:16px;font-weight:700;color:#e0d8f0;margin-bottom:6px;font-family:'Noto Serif JP',serif}
+  .card-subtitle{font-size:11px;color:#8a7a9a;margin-bottom:8px}
+  .card-desc{font-size:12px;line-height:1.7;color:#9a90a8;display:none}
+  .card.open .card-desc{display:block}
+  .card-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+  .tag{font-size:9px;padding:2px 8px;background:#0f0d14;border:1px solid #2a2035;border-radius:10px;color:#5a4a6a}
+  .card-expand{position:absolute;bottom:8px;right:12px;font-size:10px;color:#5a4a6a}
+  .card.open .card-expand{display:none}
+  .search-box{display:block;width:100%;max-width:400px;margin:0 auto 16px;padding:10px 16px;font-size:14px;font-family:inherit;background:#0f0d14;border:1px solid #2a2035;border-radius:8px;color:#e0d8f0;outline:none}
+  .search-box:focus{border-color:#d4af37}
+  .footer{text-align:center;padding:24px 0;font-size:10px;color:#3a3045}
+  .footer a{color:#5a4a6a;text-decoration:none}
+  .section-divider{text-align:center;font-size:11px;letter-spacing:4px;color:#3a3045;padding:16px 0 8px;grid-column:1/-1}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📜 godwiki</h1>
+  <p class="subtitle">MYTHOLOGY EPISODE DATABASE</p>
+  <div class="stats"><span>24</span> episodes ・ <span>3</span> mythologies ・ <span>∞</span> stories</div>
+
+  <input type="text" class="search-box" id="search" placeholder="🔍 キーワードで検索…">
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">ALL (24)</button>
+    <button class="filter-btn" data-filter="greek">🏛 ギリシャ (8)</button>
+    <button class="filter-btn" data-filter="norse">⚡ 北欧 (8)</button>
+    <button class="filter-btn" data-filter="japan">⛩ 日本 (8)</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="footer">
+    <a href="https://osakenpiro.github.io/">osakenpiro</a> — 創作素材としての神話DB
+  </div>
+</div>
+
+<script>
+const EPISODES = [
+  // ===== GREEK =====
+  {id:"G-001",myth:"greek",title:"プロメテウスの火",subtitle:"Prometheus — 火を盗んだ神",
+   desc:"ゼウスの禁を破り人間に火を与えたティターン族の神。罰としてカウカソス山に鎖で繋がれ、毎日鷲に肝臓を啄まれる永遠の刑を受ける。知恵と技術の贈与者であり、人類文明の恩人にして最初の反逆者。",
+   tags:["贈与","反逆","刑罰","文明の起源"]},
+  {id:"G-002",myth:"greek",title:"パンドラの箱",subtitle:"Pandora — 災厄と希望",
+   desc:"ゼウスがプロメテウスへの復讐として人間界に送った最初の女性パンドラ。開けてはならない箱（壺）を開け、あらゆる災いが飛び出した。しかし最後に残ったのは「希望（エルピス）」だった。",
+   tags:["禁忌","好奇心","災厄","希望"]},
+  {id:"G-003",myth:"greek",title:"オルフェウスの冥府下り",subtitle:"Orpheus & Eurydice — 振り返るな",
+   desc:"竪琴の名手オルフェウスが亡き妻エウリュディケーを取り戻すため冥府へ降りる。ハーデースから「振り返るな」の条件付きで許されるが、出口直前で振り返り、妻は永遠に失われる。",
+   tags:["冥府下り","禁忌","愛","喪失"]},
+  {id:"G-004",myth:"greek",title:"テーセウスと迷宮",subtitle:"Theseus & Minotaur — 糸の導き",
+   desc:"クレタ島の迷宮ラビュリントスに閉じ込められた半人半牛ミーノータウロスを倒すためにアテーナイの王子テーセウスが挑む。アリアドネーの糸が帰還の道を示す。",
+   tags:["迷宮","怪物退治","知恵","糸"]},
+  {id:"G-005",myth:"greek",title:"イカロスの翼",subtitle:"Icarus — 太陽に近づきすぎた少年",
+   desc:"名工ダイダロスが蝋と羽で作った翼で息子イカロスと共にクレタ島を脱出。父の忠告を無視して太陽に近づいたイカロスは翼の蝋が溶けて海に墜落する。",
+   tags:["傲慢","飛翔","父と子","墜落"]},
+  {id:"G-006",myth:"greek",title:"ナルキッソスの水鏡",subtitle:"Narcissus — 自己愛の溺死",
+   desc:"美しい青年ナルキッソスは水面に映る自分の姿に恋をし、動けなくなってそのまま死ぬ。その場所に水仙（ナルシサス）の花が咲いた。エコーの片思いも絡む。",
+   tags:["自己愛","鏡","変身","孤独"]},
+  {id:"G-007",myth:"greek",title:"オデュッセウスの帰還",subtitle:"Odysseus — 10年の漂流",
+   desc:"トロイア戦争後、故郷イタケーへの帰還に10年を費やした知将オデュッセウス。キュクロープス、セイレーン、カリュプソーなど無数の試練を乗り越え、変装して妻ペネロペーの元へ戻る。",
+   tags:["帰還","知恵","漂流","忠節"]},
+  {id:"G-008",myth:"greek",title:"アキレウスの踵",subtitle:"Achilles — 不死身の弱点",
+   desc:"母テティスが幼いアキレウスをステュクス河に浸して不死身にしたが、掴んでいた踵だけが唯一の弱点に。トロイア戦争最強の英雄はパリスの矢で踵を射抜かれて死ぬ。",
+   tags:["弱点","英雄","宿命","不死"]},
+
+  // ===== NORSE =====
+  {id:"N-001",myth:"norse",title:"オーディンの片目",subtitle:"Odin — 知恵のための犠牲",
+   desc:"主神オーディンはミーミルの泉の水を飲み知恵を得るために片目を差し出した。さらにユグドラシルに9日間吊るされてルーン文字の秘密を得る。知を得るために身体を差し出す構造。",
+   tags:["犠牲","知恵","片目","ルーン"]},
+  {id:"N-002",myth:"norse",title:"トールとヨルムンガンド",subtitle:"Thor — 宿敵との永遠の戦い",
+   desc:"雷神トールと世界蛇ヨルムンガンドの因縁。釣り上げ未遂、ラグナロクでの相討ち。世界を巻く蛇と雷の神は互いにとって唯一の終点。",
+   tags:["雷","蛇","宿敵","世界の終末"]},
+  {id:"N-003",myth:"norse",title:"ラグナロク",subtitle:"Ragnarök — 神々の黄昏",
+   desc:"予言された世界の終末。フェンリルがオーディンを飲み込み、スルトが世界を焼き、ほぼ全ての神が死ぬ。しかし世界は再生し、生き残った神と人間が新たな世界を始める。",
+   tags:["終末","再生","予言","炎"]},
+  {id:"N-004",myth:"norse",title:"ロキの拘束",subtitle:"Loki — トリックスターの末路",
+   desc:"バルドルの死を企てた罰として、ロキは息子の腸で岩に縛られ、顔に毒蛇の毒が滴り落ちる罰を受ける。妻シギュンが器で毒を受けるが、器を替える瞬間に地震が起こる。",
+   tags:["裏切り","罰","トリックスター","地震"]},
+  {id:"N-005",myth:"norse",title:"ユグドラシル",subtitle:"Yggdrasil — 世界を繋ぐ樹",
+   desc:"九つの世界を繋ぐ巨大なトネリコの木。根にはニーズヘッグが齧り、枝には鷲が住み、リスのラタトスクが両者の悪口を伝える。世界の構造そのもの。",
+   tags:["世界樹","九つの世界","構造","生命"]},
+  {id:"N-006",myth:"norse",title:"フェンリルの束縛",subtitle:"Fenrir — 噛み切れない糸",
+   desc:"巨大狼フェンリルを恐れた神々は、ドワーフに作らせた魔法の紐グレイプニルで拘束。テュールが片腕を犠牲にして信頼を装う。ラグナロクで解放されオーディンを飲む。",
+   tags:["拘束","信頼","犠牲","巨狼"]},
+  {id:"N-007",myth:"norse",title:"バルドルの死",subtitle:"Baldr — 光の神の終焉",
+   desc:"最も美しく善良な神バルドル。あらゆるものに「傷つけない」と誓わせたが、唯一ヤドリギだけが見逃された。ロキの策略でヤドリギの矢がバルドルを殺す。冥界からの帰還は失敗。",
+   tags:["光","盲点","死","ヤドリギ"]},
+  {id:"N-008",myth:"norse",title:"フレイヤの首飾り",subtitle:"Freyja & Brísingamen — 美の代価",
+   desc:"愛と美の女神フレイヤが四人のドワーフの工房で輝く首飾りブリーシンガメンを見つけ、それぞれと一夜を過ごす代価で手に入れる。美と欲望と交換の物語。",
+   tags:["美","代価","宝物","欲望"]},
+
+  // ===== JAPANESE =====
+  {id:"J-001",myth:"japan",title:"イザナギとイザナミ",subtitle:"国生み — 死者の国への追跡",
+   desc:"天つ神の命で国土を生んだ夫婦神。イザナミは火の神カグツチを産んで死に、黄泉の国へ。イザナギが追うが、腐った姿を見てしまい、逃走。黄泉平坂で千引の岩で永遠に別れる。",
+   tags:["創世","死","禁忌","夫婦"]},
+  {id:"J-002",myth:"japan",title:"天岩戸",subtitle:"Amaterasu — 太陽の隠れた日",
+   desc:"弟スサノオの乱暴に怒った天照大神が天岩戸に隠れ世界が闇に。八百万の神が策を練り、アメノウズメの踊りと鏡で天照を誘い出す。集合知とエンタメで危機を解決する構造。",
+   tags:["太陽","隠れる","踊り","集合知"]},
+  {id:"J-003",myth:"japan",title:"ヤマタノオロチ",subtitle:"Susanoo — 八つの頭の蛇退治",
+   desc:"出雲に降りたスサノオが、老夫婦の娘クシナダヒメを救うため、八岐大蛇を酒で酔わせて退治。尾から天叢雲剣（草薙剣）が出現。知恵と酒と武力の合わせ技。",
+   tags:["蛇退治","知恵","酒","剣"]},
+  {id:"J-004",myth:"japan",title:"大国主の国譲り",subtitle:"Okuninushi — 権力の移譲",
+   desc:"出雲を治めていた大国主命が、天照大神の使者との交渉の末に国を譲る。武力ではなく交渉による権力移譲。代わりに出雲大社を建ててもらう。",
+   tags:["交渉","権力","譲渡","出雲"]},
+  {id:"J-005",myth:"japan",title:"浦島太郎",subtitle:"Urashima — 時間の箱",
+   desc:"亀を助けた漁師が龍宮城へ招かれ歓待を受ける。帰郷すると数百年が経過。開けるなと言われた玉手箱を開けると白髪の老人に。時間のブラックボックス。",
+   tags:["時間","禁忌","龍宮","老い"]},
+  {id:"J-006",myth:"japan",title:"かぐや姫",subtitle:"Kaguya — 月からの来訪者",
+   desc:"竹取の翁が竹の中から見つけた女児が絶世の美女に成長。五人の貴公子と帝の求婚を全て退け、月へ帰る。異界からの来訪者が人間社会に溶け込めない構造。",
+   tags:["月","求婚","異界","帰還"]},
+  {id:"J-007",myth:"japan",title:"海幸彦と山幸彦",subtitle:"Umisachi & Yamasachi — 兄弟の逆転",
+   desc:"海の幸を得る兄と山の幸を得る弟が道具を交換。弟が釣り針を失くし海神の宮へ。潮の満ち引きを操る玉を得て兄を従える。弟が勝つ構造は日本神話の定型。",
+   tags:["兄弟","逆転","海","服従"]},
+  {id:"J-008",myth:"japan",title:"神武東征",subtitle:"Jimmu — 最初の天皇",
+   desc:"日向を出発した神武天皇が大和を目指す東征。八咫烏に導かれ、金鵄の光で敵を倒す。橿原宮で即位。神話から歴史への橋渡し。天孫降臨の地上版。",
+   tags:["東征","建国","八咫烏","天皇"]}
+];
+
+const grid = document.getElementById('grid');
+const searchBox = document.getElementById('search');
+let activeFilter = 'all';
+
+function renderCards(filter, query) {
+  grid.innerHTML = '';
+  let filtered = EPISODES;
+  if (filter !== 'all') filtered = filtered.filter(e => e.myth === filter);
+  if (query) {
+    const q = query.toLowerCase();
+    filtered = filtered.filter(e =>
+      e.title.toLowerCase().includes(q) ||
+      e.subtitle.toLowerCase().includes(q) ||
+      e.desc.toLowerCase().includes(q) ||
+      e.tags.some(t => t.includes(q))
+    );
+  }
+
+  let lastMyth = '';
+  filtered.forEach(ep => {
+    if (filter === 'all' && ep.myth !== lastMyth) {
+      lastMyth = ep.myth;
+      const label = {greek:'🏛 GREEK MYTHOLOGY',norse:'⚡ NORSE MYTHOLOGY',japan:'⛩ JAPANESE MYTHOLOGY'}[ep.myth];
+      grid.innerHTML += `<div class="section-divider">─── ${label} ───</div>`;
+    }
+    const mythClass = {greek:'myth-greek',norse:'myth-norse',japan:'myth-japan'}[ep.myth];
+    const mythLabel = {greek:'ギリシャ',norse:'北欧',japan:'日本'}[ep.myth];
+    grid.innerHTML += `
+      <div class="card" onclick="this.classList.toggle('open')">
+        <div class="card-header">
+          <span class="card-id">${ep.id}</span>
+          <span class="card-myth ${mythClass}">${mythLabel}</span>
+        </div>
+        <div class="card-title">${ep.title}</div>
+        <div class="card-subtitle">${ep.subtitle}</div>
+        <div class="card-desc">${ep.desc}</div>
+        <div class="card-tags">${ep.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        <span class="card-expand">▼ tap to read</span>
+      </div>`;
+  });
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    renderCards(activeFilter, searchBox.value);
+  });
+});
+
+searchBox.addEventListener('input', () => renderCards(activeFilter, searchBox.value));
+
+renderCards('all', '');
+</script>
 
 <!-- osakenpiro support button v1 -->
 <style>
@@ -36,4 +238,5 @@
   ☕ <span>応援</span>
 </a>
 <!-- /osakenpiro support button -->
-
+</body>
+</html>
